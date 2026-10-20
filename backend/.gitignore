@@ -1,0 +1,12 @@
+.env
+.env.bootstrap
+.env.test
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+*.log
+*.db
+*.sql.dump
+local-verification/
