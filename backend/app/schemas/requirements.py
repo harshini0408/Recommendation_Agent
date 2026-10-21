@@ -1,6 +1,6 @@
 """Typed conversation state and the much smaller model-controlled patch."""
 
-from typing import Annotated, Literal
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.json_schema import GetJsonSchemaHandler
 from pydantic_core import CoreSchema
@@ -8,6 +8,7 @@ import pydantic_core
 
 UseCase = Literal["general", "programming", "gaming", "creative", "machine_learning"]
 Preference = Literal["lightweight", "battery", "performance", "value"]
+MlMode = Literal["local", "cloud", "both", "unsure"]
 FieldName = Literal[
     "category",
     "use_cases",
@@ -37,10 +38,17 @@ class Requirements(BaseModel):
     min_battery_hours: float | None = Field(default=None, gt=0, le=72)
     required_features: list[str] = Field(default_factory=list, max_length=12)
     preferences: list[Preference] = Field(default_factory=list, max_length=4)
-    ml_mode: Literal["local", "cloud"] | None = None
+    ml_mode: MlMode | None = None
     conflicts: list[str] = Field(default_factory=list)
     provenance: dict[str, str] = Field(default_factory=dict)
     pending_budget: int | None = None
+
+    # Application-managed dialogue state and provisional assumptions
+    pending_clarification: str | None = None
+    clarification_field: str | None = None
+    clarification_attempts: dict[str, int] = Field(default_factory=dict)
+    provisional_assumptions: dict[str, str] = Field(default_factory=dict)
+    rejected_budget_proposals: list[int] = Field(default_factory=list)
 
 
 class _AnyJsonValue:

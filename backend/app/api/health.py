@@ -21,9 +21,18 @@ def health(request: Request):
 @router.get("/meta")
 def meta(request: Request):
     settings = request.app.state.settings
+    catalogue_size = 40
+    try:
+        with request.app.state.session_factory() as session:
+            count = session.scalar(text("SELECT count(*) FROM products"))
+            if count is not None:
+                catalogue_size = count
+    except Exception:
+        pass
     return {
         "name": "ClearChoice",
         "catalogue": "synthetic laptops",
+        "catalogue_size": catalogue_size,
         "mode": request.app.state.extractor.mode,
         "provider": "Groq" if settings.llm_mode == "live" else "limited demo parser",
         "model": settings.groq_model if settings.llm_mode == "live" else None,

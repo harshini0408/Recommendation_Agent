@@ -68,6 +68,8 @@ def merge_state(old, extraction, message, message_id):
                 valid = isinstance(value, list) and all(isinstance(v, str) for v in value)
             else:
                 valid = isinstance(value, str)
+                if field == "ml_mode" and valid and value.lower().strip() not in ("local", "cloud", "both", "unsure"):
+                    valid = False
             if not valid:
                 raise AppError(
                     502, "invalid_extraction", "The model returned an invalid requirement type.", True
@@ -82,9 +84,10 @@ def merge_state(old, extraction, message, message_id):
         data["no_budget"] = False
     if "no_budget" in seen and data["no_budget"]:
         data["budget_max_inr"] = None
-    # Any new requirement invalidates an older proposal.
+    # Any new requirement invalidates an older proposal and resets rejected proposals.
     if seen:
         data["pending_budget"] = None
+        data["rejected_budget_proposals"] = []
     if not seen and extraction.proposal_decision == "accept" and old.pending_budget:
         data["budget_max_inr"] = old.pending_budget
         data["no_budget"] = False
@@ -92,6 +95,11 @@ def merge_state(old, extraction, message, message_id):
         data["pending_budget"] = None
         seen.add("budget_max_inr")
     if extraction.proposal_decision == "reject":
+        if old.pending_budget:
+            rejected = list(data.get("rejected_budget_proposals") or [])
+            if old.pending_budget not in rejected:
+                rejected.append(old.pending_budget)
+            data["rejected_budget_proposals"] = rejected
         data["pending_budget"] = None
     try:
         return Requirements.model_validate(data), sorted(seen)

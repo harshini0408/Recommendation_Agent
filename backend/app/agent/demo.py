@@ -23,13 +23,13 @@ class DemoExtractor:
         cases = list(state.use_cases)
         mapping = {
             "programming": ["programming", "coding"],
-            "machine_learning": ["machine learning", " ml "],
+            "machine_learning": ["machine learning", " ml", "ml ", "ml"],
             "gaming": ["gaming", "games"],
             "creative": ["editing", "creative", "design"],
             "general": ["general coursework", "office", "browsing"],
         }
         for case, phrases in mapping.items():
-            if any(p in text for p in phrases) and case not in cases:
+            if (any(p in text for p in phrases) or (case == "machine_learning" and re.search(r"\bml\b", text))) and case not in cases:
                 cases.append(case)
         if cases != state.use_cases:
             put("use_cases", cases)
@@ -62,7 +62,11 @@ class DemoExtractor:
             put("require_dedicated_gpu", None, True)
         elif "must" in text and ("dedicated" in text or "gpu" in text):
             put("require_dedicated_gpu", True)
-        if "cloud" in text:
+        if any(w in text for w in ["both", "hybrid", "a bit of both"]):
+            put("ml_mode", "both")
+        elif any(w in text for w in ["not sure", "unsure", "don't know", "dont know", "you suggest"]):
+            put("ml_mode", "unsure")
+        elif "cloud" in text:
             put("ml_mode", "cloud")
         elif "local" in text:
             put("ml_mode", "local")
@@ -78,10 +82,11 @@ class DemoExtractor:
         if prefs != state.preferences:
             put("preferences", prefs)
         decision = "none"
-        if state.pending_budget and re.fullmatch(r"(?:yes|yes please|accept|okay|ok|go ahead)[.! ]*", text):
-            decision = "accept"
-        elif state.pending_budget and text.strip() in ("no", "no thanks", "reject"):
-            decision = "reject"
+        if state.pending_budget and state.clarification_field != "ml_mode":
+            if re.fullmatch(r"(?:yes|yes please|accept|okay|ok|go ahead)[.! ]*", text):
+                decision = "accept"
+            elif text.strip() in ("no", "no thanks", "reject"):
+                decision = "reject"
         intent = (
             "compare"
             if "compare" in text

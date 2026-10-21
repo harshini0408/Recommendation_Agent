@@ -40,7 +40,7 @@ Success (200) includes:
 }
 ```
 
-The empty objects/lists above illustrate envelope positions, not a complete real response. Requirements are fully typed and populated. Each recommendation has `product`, `score`, `score_components`, `reasons`, `trade_offs`, `unknowns`. The recommendation list has zero to two items. Response types: `clarification`, `recommendations`, `no_match`, `informational`. Evidence includes changed fields, mandatory filters, eligible count, search flag, ranking description, and an optional pending budget proposal.
+The empty objects/lists above illustrate envelope positions, not a complete real response. Requirements are fully typed and populated: `use_cases`, `budget_max_inr`, `ml_mode` (`"local"`, `"cloud"`, `"both"`, `"unsure"`), mandatory hardware limits, and dialogue metadata (`pending_clarification`, `clarification_field`, `provisional_assumptions`, `rejected_budget_proposals`). Each recommendation has `product`, `score`, `score_components`, `reasons`, `trade_offs`, `unknowns`. The recommendation list has zero to two items. Response types: `clarification`, `recommendations`, `no_match`, `informational`. Evidence includes changed fields, mandatory filters, eligible count, search flag, ranking description, provisional assumptions, and an optional pending budget proposal.
 
 `GET /api/v1/conversations/{UUID}` returns the complete ordered history and current state. Each assistant message retains its structured response for reproducibility; the API also returns `latest_response`. Unknown conversation: 404. Invalid UUID: 422.
 
@@ -50,7 +50,7 @@ The empty objects/lists above illustrate envelope positions, not a complete real
 
 `GET /api/v1/health`: 200 with `status:ok,database:ready` when the products table is reachable; 503 before migrations or on database failure. It does not test the provider or count as a live LLM check.
 
-`GET /api/v1/meta`: application name, synthetic catalogue label, `mode`, provider/model name, and whether a nonempty key is configured. It never returns the key. A configured key may still be invalid; use the smoke script.
+`GET /api/v1/meta`: application name, synthetic catalogue label, `catalogue_size` (total rows), `mode`, provider/model name, and whether a nonempty key is configured. It never returns the key. A configured key may still be invalid; use the smoke script.
 
 ## Errors and retries
 

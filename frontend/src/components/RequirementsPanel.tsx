@@ -12,7 +12,10 @@ export function RequirementsPanel({state,changed}:{state?:Requirements;changed:s
  return <aside className="requirements panel"><div className="panel-title"><SlidersHorizontal size={18}/><h2>Your requirements</h2></div>
  <p className="muted small">Updated as the conversation develops.</p>
  <div className={`budget ${changed.includes('budget_max_inr')?'changed':''}`}><span className="eyebrow">BUDGET CEILING</span><strong>{state?.budget_max_inr?money(state.budget_max_inr):state?.no_budget?'No fixed budget':'Not set yet'}</strong></div>
- <section><h3>Main use</h3><div className="tags">{state?.use_cases.length?state.use_cases.map(x=><span className="tag" key={x}>{label(x)}</span>):<span className="muted small">Tell us what you’ll use it for.</span>}</div>{state?.ml_mode&&<p className="small muted">ML experiments: {state.ml_mode}</p>}</section>
+ <section><h3>Main use</h3><div className="tags">{state?.use_cases.length?state.use_cases.map(x=><span className="tag" key={x}>{label(x)}</span>):<span className="muted small">Tell us what you’ll use it for.</span>}</div>
+ {state?.ml_mode&&<p className="small muted">ML experiments: <strong style={{color:'var(--text)'}}>{state.ml_mode==='local'?'Local (on device)':state.ml_mode==='cloud'?'Cloud platforms':state.ml_mode==='both'?'Mixed (local & cloud)':'Not sure yet'}</strong></p>}
+ </section>
+ {state?.provisional_assumptions&&Object.keys(state.provisional_assumptions).length>0&&<section className="provisional-assumptions"><h3>Provisional assumptions</h3>{Object.entries(state.provisional_assumptions).map(([k,v])=><p className="small muted" key={k}><span className="tag light">Assumed</span> {v}</p>)}</section>}
  <section><h3>Must have</h3>{mandatory.length?<ul className="check-list">{mandatory.map(([key,text],i)=><li className={changed.includes(key)?'changed':''} key={i}><Check size={14}/>{text}</li>)}</ul>:<p className="small muted">No additional hard constraints.</p>}</section>
  <section><h3>Nice to have</h3><div className="tags">{state?.preferences.length?state.preferences.map(x=><span className="tag light" key={x}>{label(x)}</span>):<span className="small muted">Optional preferences go here.</span>}</div></section>
  {!!state?.conflicts.length&&<div className="notice">{state.conflicts.map(x=><p key={x}>{x}</p>)}</div>}

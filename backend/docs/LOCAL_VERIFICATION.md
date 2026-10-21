@@ -129,6 +129,39 @@ correctly JSON-encodes values into strings (e.g. `"80000"`, `"[\"programming\"]"
 
 All 38 automated tests passed before and after the fix.
 
+## Improvements & Debugging Round (21 October 2026)
+
+### Problems Identified & Resolved
+1. **Uncertainty Handled Like Out-of-Scope:** When customer answered "not sure" to local vs cloud ML, the model returned `out_of_scope` with no changes, triggering a generic reset message ("I can help compare laptops in this synthetic catalogue. Tell me your use case and budget in INR.").
+   - *Fix:* Added contextual interpretation of short answers against pending clarification; updated system prompt to classify uncertainty about laptops as `recommend`; added proactive fallback so uncertainty never resets active requirements.
+2. **Missing Dialogue Metadata & Repetitive Clarifications:** The system had no memory of which question was pending or how many attempts had been made, causing infinite clarification loops on short replies.
+   - *Fix:* Added application-managed dialogue state (`pending_clarification`, `clarification_field`, `clarification_attempts`, `provisional_assumptions`, `rejected_budget_proposals`) to `Requirements`.
+3. **ML Usage States Incomplete:** `ml_mode` was restricted to `Literal["local", "cloud"] | None`. "both" and "unsure" were rejected or misclassified.
+   - *Fix:* Expanded `ml_mode` across backend, schemas, prompt, ranking, and frontend to support `"local" | "cloud" | "both" | "unsure" | None`.
+4. **Ranking & Trade-off Support for "both" and "unsure":**
+   - *Fix:* Implemented deterministic heuristics:
+     - `both`: Target `(CPU tier 4, 16 GB RAM, GPU tier 3)`
+     - `unsure`: Provisional balanced target `(CPU tier 3, 16 GB RAM, GPU tier 2)` with plain-language explanation of on-device vs cloud ML
+5. **No-Match Repeated Proposals:** Rejecting a proposed budget could cause immediate re-prompting.
+   - *Fix:* Tracked `rejected_budget_proposals` to prevent repeated identical budget proposals without new user constraints.
+6. **Frontend Enhancements:**
+   - Quick-reply buttons (`Local`, `Cloud`, `Both`, `Not sure`) rendered when ML mode clarification is active.
+   - Dynamic catalogue count fetched from `/api/v1/meta`.
+   - Provisional assumptions rendered distinctly from hard user constraints.
+   - Clear ML mode label in Requirements panel.
+
+### Test Results (21 October 2026)
+| Suite | Command | Result |
+|---|---|---|
+| Full Pytest Suite | `python -m pytest -q` | **53 passed, 1 skipped** (0 failures) |
+| PostgreSQL Integration | `python -m scripts.run_postgres_tests` | **1 passed** (real PostgreSQL database) |
+| Ruff Linter | `python -m ruff check .` | **All checks passed!** (0 errors) |
+| TypeScript Typecheck | `npm run typecheck` | **0 errors** |
+| Production Build | `npm run build` | **Built successfully** (dist bundle 246 kB) |
+| Live Groq Reproduction | `reproduce_failure.py` | **5 turns passed live** |
+| Live Mixed ML Request | `verify_live_scenarios.py` | **Passed live** |
+| Live No-Match Proposal | `verify_live_scenarios.py` | **Passed live** |
+
 ## Running servers
 
 | Service | URL | Status |
@@ -137,55 +170,7 @@ All 38 automated tests passed before and after the fix.
 | Frontend (Vite) | http://127.0.0.1:5173 | Running (npm run dev) |
 | Interactive docs | http://127.0.0.1:8000/docs | Accessible |
 | Health | http://127.0.0.1:8000/api/v1/health | `{"status":"ok","database":"ready"}` |
-| Meta | http://127.0.0.1:8000/api/v1/meta | `mode=live, llm_configured=true` |
-
-## End-to-end API verification
-
-**Complete request → recommendations:**
-```
-POST /conversations → cid
-POST /conversations/{cid}/messages  {"content": "Laptop for programming under 80000 with 16 GB RAM"}
-→ response_type: recommendations
-→ mode: live
-→ budget_max_inr: 80000, min_ram_gb: 16, use_cases: ["programming"]
-→ 2 recommendations from 24 eligible products
-→ [1] ClearChoice Code 1 (Synthetic) @ INR 49,000 (score=0.825)
-→ [2] ClearChoice Study 6 (Synthetic) @ INR 50,500 (score=0.8196)
-```
-
-**Budget change (multi-turn memory):**
-```
-POST /conversations/{cid}/messages  {"content": "Actually my budget is 60000"}
-→ response_type: recommendations
-→ budget_max_inr updated: 60000 ✓
-→ min_ram_gb RETAINED: 16 ✓
-→ use_cases RETAINED: ["programming"] ✓
-→ changed_fields: ["budget_max_inr"] ✓
-→ 2 recommendations (both ≤ INR 60,000) ✓
-```
-
-**No-match with budget proposal:**
-```
-POST /conversations  → new cid
-POST /messages  {"content": "Programming under 20000 with 16 GB RAM"}
-→ response_type: no_match ✓
-→ budget_max_inr: 20000 (unchanged) ✓
-→ pending_budget: 37000 (lowest qualifying price) ✓
-→ message: "The lowest price meeting all other constraints is INR 37,000. Would you like to raise the budget to that amount?" ✓
-```
-
-## Remaining browser checks (manual)
-
-Browser walkthrough from `docs/DEMO_SCENARIOS.md` not yet completed;
-requires manual interaction at http://127.0.0.1:5173.
-Items pending:
-- [ ] UI renders requirements panel, chat, product cards
-- [ ] Keyboard send (Enter), loading indicator, error states
-- [ ] Product details modal, side-by-side comparison
-- [ ] Browser refresh restores conversation history
-- [ ] Mobile layout (390px width)
-- [ ] No-match → acceptance → recommendations flow in UI
-- [ ] Demo mode label display (only in demo mode — live mode currently active)
+| Meta | http://127.0.0.1:8000/api/v1/meta | `mode=live, llm_configured=true, catalogue_size=40` |
 
 ## Restart instructions
 

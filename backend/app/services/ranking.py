@@ -15,8 +15,15 @@ def workload(p, r):
     scores = []
     for use in r.use_cases:
         cpu, ram, gpu = TARGETS[use]
-        if use == "machine_learning" and r.ml_mode == "cloud":
-            cpu, ram, gpu = 3, 16, 0
+        if use == "machine_learning":
+            if r.ml_mode == "cloud":
+                cpu, ram, gpu = 3, 16, 0
+            elif r.ml_mode == "both":
+                cpu, ram, gpu = 4, 16, 3
+            elif r.ml_mode == "unsure":
+                cpu, ram, gpu = 3, 16, 2
+            else:  # local or None
+                cpu, ram, gpu = 4, 32, 4
         parts = [min(p.cpu_tier / cpu, 1), min(p.ram_gb / ram, 1)]
         if gpu:
             parts.append(min(p.gpu_tier / gpu, 1))
@@ -79,6 +86,15 @@ def rank_products(products, r):
                 f"Workload heuristic uses CPU tier {p.cpu_tier}/5 and {p.ram_gb} GB RAM"
                 + (f", plus graphics tier {p.gpu_tier}/5." if p.gpu_tier else ".")
             )
+        if "machine_learning" in r.use_cases:
+            if r.ml_mode == "both":
+                reasons.append("Workload heuristic targets mixed local and cloud ML (CPU tier 4, 16 GB RAM, GPU tier 3).")
+            elif r.ml_mode == "unsure":
+                reasons.append("Provisional balanced weighting applied for ML coursework (CPU tier 3, 16 GB RAM, GPU tier 2) while usage is unsure.")
+            elif r.ml_mode == "cloud":
+                reasons.append("Workload heuristic targets cloud-based ML (CPU tier 3, 16 GB RAM, standard graphics).")
+            elif r.ml_mode == "local":
+                reasons.append("Workload heuristic targets local ML on-device (CPU tier 4, 32 GB RAM, GPU tier 4).")
         if "lightweight" in r.preferences and p.weight_kg is not None:
             reasons.append(f"Recorded weight is {p.weight_kg:g} kg; lower weight is preferred in ranking.")
         if "battery" in r.preferences and p.battery_hours is not None:
@@ -93,8 +109,13 @@ def rank_products(products, r):
                 unknowns.append(label + " is not recorded.")
         for use in r.use_cases:
             _cpu, ram, gpu = TARGETS[use]
-            if use == "machine_learning" and r.ml_mode == "cloud":
-                _cpu, ram, gpu = 3, 16, 0
+            if use == "machine_learning":
+                if r.ml_mode == "cloud":
+                    _cpu, ram, gpu = 3, 16, 0
+                elif r.ml_mode == "both":
+                    _cpu, ram, gpu = 4, 16, 3
+                elif r.ml_mode == "unsure":
+                    _cpu, ram, gpu = 3, 16, 2
             if p.ram_gb < ram:
                 tradeoffs.append(
                     f"{p.ram_gb} GB RAM is below this demo's {ram} GB preference target for {use.replace('_', ' ')}."

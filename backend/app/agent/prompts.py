@@ -31,7 +31,7 @@ max_weight_kg, min_battery_hours: explicit numeric mandatory limits only.
 required_features: explicit must-have feature tags, lowercase.
 preferences: lightweight, battery, performance, value. Carrying around is a
 lightweight preference, not a mandatory numeric weight limit.
-ml_mode: local or cloud, only when stated.
+ml_mode: local, cloud, both, or unsure. When the user says "not sure", "I don't know", or asks you to suggest regarding local vs cloud ML, use "unsure". When they want both local and cloud or mixed usage, use "both".
 
 Local ML alone does not justify mandatory GPU/RAM requirements: ranking handles
 workload suitability. Do not invent specifications. If the user supplies conflicting
@@ -39,9 +39,10 @@ values without clearly correcting one, leave that field unchanged and put a conc
 clarification question in conflicts. Explicit "actually"/"instead" changes replace
 old values. Resolve previous conflicts using the user's reply. Return unresolved
 conflicts if the user has not answered them. conflicts=[] once resolved.
+If the user says "same budget" or reminds you of an already stated budget (e.g. "I already told my budget"),
+preserve budget_max_inr and do not clear it.
 
-intent: recommend normally, details/compare for factual questions about retrieved
-products, greeting for greetings, out_of_scope for unrelated tasks.
+intent: recommend normally for search and answers to pending questions (including "both", "not sure", "programming"), details/compare for factual questions about retrieved products, greeting for greetings, out_of_scope ONLY for completely unrelated non-laptop requests (such as cooking or poetry). Answering a pending clarification, expressing uncertainty, or discussing laptop budgets is NEVER out_of_scope.
 product_ids: only IDs provided in previous recommendations or context. Resolve
 "first"/"second" to those IDs. Empty means latest recommendation pair.
 proposal_decision: accept ONLY for explicit acceptance of the pending budget
