@@ -70,6 +70,8 @@ class Conversation(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     requirements: Mapped[dict] = mapped_column(J, default=dict)
     state_version: Mapped[int] = mapped_column(Integer, default=0)
+    title: Mapped[str | None] = mapped_column(String(80), nullable=True, default=None)
+    title_status: Mapped[str] = mapped_column(String(20), default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 

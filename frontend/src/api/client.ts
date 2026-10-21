@@ -1,4 +1,4 @@
-import type { Conversation, Meta, Product, Turn } from '../types';
+import type { Conversation, ConversationSummary, Meta, Product, TitleOut, Turn } from '../types';
 const BASE=(import.meta.env.VITE_API_BASE_URL||'http://localhost:8000').replace(/\/$/,'');
 export class ApiError extends Error {constructor(message:string,public status:number,public code:string){super(message)}}
 async function request<T>(path:string,init?:RequestInit):Promise<T>{
@@ -19,4 +19,6 @@ export const api={
  get:(id:string)=>request<Conversation>(`/conversations/${id}`),
  send:(id:string,content:string,client_message_id:string)=>request<Turn>(`/conversations/${id}/messages`,{method:'POST',body:JSON.stringify({content,client_message_id})}),
  product:(id:string)=>request<Product>(`/products/${encodeURIComponent(id)}`),
+ summaries:(ids:string[])=>request<ConversationSummary[]>('/conversations/summaries',{method:'POST',body:JSON.stringify({ids})}),
+ generateTitle:(id:string)=>request<TitleOut>(`/conversations/${id}/title`,{method:'POST'}),
 };

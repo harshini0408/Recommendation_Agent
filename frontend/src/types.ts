@@ -27,7 +27,13 @@ export interface Turn {
  mode:'live'|'demo'|'test';
 }
 export interface Message {id:string;role:'user'|'assistant';content:string;sequence:number;created_at:string;response:Turn|null}
-export interface Conversation {id:string;requirements:Requirements;state_version:number;created_at:string;updated_at:string;messages:Message[];latest_response:Turn|null}
+export interface Conversation {id:string;requirements:Requirements;state_version:number;title:string|null;title_status:string;created_at:string;updated_at:string;messages:Message[];latest_response:Turn|null}
+export interface ConversationSummary {id:string;title:string|null;title_status:string;created_at:string;updated_at:string}
+export interface TitleOut {id:string;title:string|null;title_status:string}
 export interface Meta {name:string;catalogue:string;catalogue_size?:number;mode:string;provider:string;model:string|null;llm_configured:boolean}
 export const money=(value:number)=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(value);
 export const label=(s:string)=>s.replaceAll('_',' ');
+export const displayTitle=(s:ConversationSummary|Conversation|null|undefined):string=>{
+ if(!s)return 'New chat';
+ return s.title||'New chat';
+};

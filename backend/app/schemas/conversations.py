@@ -46,7 +46,30 @@ class ConversationOut(BaseModel):
     id: str
     requirements: Requirements
     state_version: int
+    title: str | None = None
+    title_status: str = "pending"
     created_at: datetime
     updated_at: datetime
     messages: list[MessageOut]
     latest_response: TurnResponse | None
+
+
+class ConversationSummary(BaseModel):
+    """Lightweight summary returned by the sidebar listing endpoint."""
+    id: str
+    title: str | None = None
+    title_status: str = "pending"
+    created_at: datetime
+    updated_at: datetime
+
+
+class TitleOut(BaseModel):
+    id: str
+    title: str | None
+    title_status: str
+
+
+class SummaryRequest(BaseModel):
+    """Batch lookup of conversation summaries by browser-known IDs."""
+    model_config = ConfigDict(extra="forbid")
+    ids: list[str] = Field(max_length=100)
